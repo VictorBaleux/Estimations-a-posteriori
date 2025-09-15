@@ -1,9 +1,15 @@
-"""
-Euler_ODE_Errors.py
-----------------------------------------------
-EDO: u'(t) = -λ u(t), u(0)=u0, λ=1.
 
-Figures générées :
+"""
+Euler_ODE_Errors.py — version mise à jour
+----------------------------------------------
+EDO: u'(t) = -λ u(t), u(0)=u0.
+
+Modifs (sept. 2025) :
+1) Quadrature L2 : rectangles à gauche remplacés par trapèze / Simpson (si N pair).
+2) Stabilité Euler : assertion robuste — si λ=0 ne rien imposer ; sinon Δt ≤ (2−ε)/λ.
+3) Choix des pas : prend Δt = T/N avec N entier (échelonné log) pour éviter un "dernier pas" irrégulier.
+
+Figures générées (inchangées) :
 1) Comparaison_visuelle.png
    -> 2×2 : haut Δt=1 s, bas Δt=0.001 s ; (gauche) solutions, (droite) erreur
 2) Erreur_vs_delta_temps.png
@@ -11,13 +17,12 @@ Figures générées :
 3) Erreur_vs_derivé.png
    -> Scatter de l'erreur ponctuelle |e(t_n)| en fonction de la norme
       de la dérivée exacte |u'_{ex}(t_n)|, pour Δt=1 s et Δt=0.001 s.
-      Sous-figure gauche: axes linéaires ; droite: log-log.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 
 @dataclass
@@ -27,69 +32,105 @@ class Problem:
     T: float = 60.0    # horizon temporel (1 minute)
 
 
-def euler_explicite(pb: Problem, dt: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+# ------------------------------
+#   Intégrateur d'Euler explicite
+# ------------------------------
+
+def euler_explicite(pb: Problem, dt: Optional[float] = None, N: Optional[int] = None, eps: float = 1e-12
+                   ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Intègre u' = -λ u par Euler explicite avec pas nominal dt jusqu'à T.
-    Le dernier pas est ajusté (si nécessaire) pour tomber exactement à T.
+    Intègre u' = -λ u par Euler explicite avec pas Δt = T/N (N entier).
+    On peut fournir soit dt (approx.), soit directement N. Si dt est fourni,
+    on prend N = round(T/dt) puis Δt := T/N pour tomber EXACTEMENT à T.
+
     Retourne:
-        t : instants (taille N+1)
+        t : instants (taille N+1, réguliers de 0 à T)
         u : solution numérique aux instants t
-        dts: taille de chaque intervalle (longueur N), avec dernier dt possiblement ajusté
+        dts: tableau de taille N rempli par Δt (tous les pas identiques)
     """
     T = pb.T
     lam = pb.lam
     u0 = pb.u0
 
-    N_full = int(np.floor(T / dt))
-    t_list = [0.0]
-    u_list = [u0]
-    
-    assert dt < 2.0/lam, f"Instable pour Euler explicite: λΔt={lam*dt:.3g} (attendu < 2)."
+    if N is None:
+        if dt is None:
+            raise ValueError("Fournir soit dt, soit N.")
+        N = max(1, int(round(T / float(dt))))
+    else:
+        N = int(N)
+        if N <= 0:
+            raise ValueError("N doit être un entier positif.")
 
-    # Pas réguliers de taille dt
-    for _ in range(N_full):
-        un = u_list[-1]
-        un1 = un + dt * (-lam * un)
-        u_list.append(un1)
-        t_list.append(t_list[-1] + dt)
+    dt = T / N  # pas EXACT et régulier
+    # Stabilité Euler robuste
+    if lam != 0.0 and lam > 0.0:
+        bound = (2.0 - eps) / lam
+        assert dt <= bound, (
+            f"Instable pour Euler explicite: λΔt={lam*dt:.3g} ; "
+            f"attendu Δt ≤ (2−ε)/λ ≈ {bound:.6g} (ε={eps:g})."
+        )
+    # Si λ=0 : ne rien imposer.
 
-    # Dernier pas ajusté pour atteindre exactement T (si besoin)
-    t_current = t_list[-1]
-    dt_last = T - t_current
-    dts = [dt] * N_full  # liste des pas
-    if dt_last > 1e-14:
-        un = u_list[-1]
-        un1 = un + dt_last * (-lam * un)
-        u_list.append(un1)
-        t_list.append(T)
-        dts.append(dt_last)
+    t = np.linspace(0.0, T, N + 1, dtype=float)
+    u = np.empty(N + 1, dtype=float)
+    u[0] = u0
+    for n in range(N):
+        u[n + 1] = u[n] + dt * (-lam * u[n])
 
-    t = np.array(t_list, dtype=float)
-    u = np.array(u_list, dtype=float)
-    dts = np.array(dts, dtype=float)
+    dts = np.full(N, dt, dtype=float)
     return t, u, dts
 
+
+# ------------------------------
+#   Outils exacts / quadrature
+# ------------------------------
 
 def u_exact(t: np.ndarray, pb: Problem) -> np.ndarray:
     return pb.u0 * np.exp(-pb.lam * t)
 
 
+def _integrate_uniform(y: np.ndarray, dt: float) -> float:
+    """
+    Intègre une fonction tabulée y(t_n) sur [0,T] avec pas uniforme dt.
+    Utilise Simpson si le nombre d'intervalles N=len(y)-1 est pair, sinon trapèze.
+    Retourne l'intégrale numérique (pas la racine).
+    """
+    N = y.size - 1
+    if N <= 0:
+        return 0.0
+    if N % 2 == 0 and N >= 2:
+        # Simpson
+        s_odd = np.sum(y[1:N:2])
+        s_even = np.sum(y[2:N-1:2]) if N >= 3 else 0.0
+        return (dt / 3.0) * (y[0] + y[-1] + 4.0 * s_odd + 2.0 * s_even)
+    # Trapèze
+    return dt * (0.5 * y[0] + np.sum(y[1:-1]) + 0.5 * y[-1])
+
+
 def l2_error_function(t: np.ndarray, u_num: np.ndarray, dts: np.ndarray, pb: Problem) -> float:
-    ue = u_exact(t, pb)
-    e_left = u_num[:-1] - ue[:-1]     # erreur évaluée au bord gauche de chaque intervalle
-    return float(np.sqrt(np.sum((e_left**2) * dts)))
+    """
+    ||e||_{L2(0,T)} ≈ ( ∫_0^T |u_num(t)-u_ex(t)|^2 dt )^{1/2}
+    Quadrature: Simpson (si possible) sinon trapèze — pas uniforme Δt = dts[0].
+    """
+    dt = float(dts[0])
+    e = u_num - u_exact(t, pb)
+    integ = _integrate_uniform(e**2, dt)
+    return float(np.sqrt(integ))
 
 
 def l2_error_derivative(t: np.ndarray, u_num: np.ndarray, dts: np.ndarray, pb: Problem) -> float:
-    # dérivée numérique par intervalle
-    du = np.diff(u_num)
-    uprime_num = du / dts  # taille N
-    # points milieux de chaque intervalle
-    t_mid = t[:-1] + 0.5 * dts
-    # dérivée exacte aux milieux
-    uprime_ex = -pb.lam * u_exact(t_mid, pb)
+    """
+    ||e'||_{L2(0,T)} ≈ ( ∫_0^T |u'_num(t) - u'_ex(t)|^2 dt )^{1/2}
+    - u'_num(t_n) : dérivée numérique aux noeuds via différences centrales (np.gradient)
+    - u'_ex(t_n)  : -λ u_ex(t_n)
+    Quadrature: Simpson (si possible) sinon trapèze — pas uniforme.
+    """
+    dt = float(dts[0])
+    uprime_num = np.gradient(u_num, dt)  # central diff interne, 1er ordre aux bords
+    uprime_ex = -pb.lam * u_exact(t, pb)
     eprime = uprime_num - uprime_ex
-    return float(np.sqrt(np.sum((eprime**2) * dts)))
+    integ = _integrate_uniform(eprime**2, dt)
+    return float(np.sqrt(integ))
 
 
 def convergence_slope(dts: np.ndarray, errs: np.ndarray) -> float:
@@ -100,20 +141,25 @@ def convergence_slope(dts: np.ndarray, errs: np.ndarray) -> float:
     return float(slope)
 
 
+# ------------------------------
+#   Figures
+# ------------------------------
+
 def plot_part1_two_rows(pb: Problem,
                         dt_top: float = 1.0,
                         dt_bottom: float = 1e-3,
-                        savepath: str = "Visual_comparison.png") -> None:
+                        savepath: str = "Comparaison_visuelle.png") -> None:
     """
     Figure 2x2 : top = Δt=1 s ; bottom = Δt=0.001 s.
     Colonnes: (gauche) solutions ; (droite) erreur ponctuelle.
+    Δt est projeté sur T/N (N entier) pour éviter un dernier pas irrégulier.
     """
-    # TOP (Δt = 1 s)
+    # TOP (Δt ≈ 1 s, mais forcé à T/N)
     t1, u1, dts1 = euler_explicite(pb, dt_top)
     ue1 = u_exact(t1, pb)
     err1 = np.abs(u1 - ue1)
 
-    # BOTTOM (Δt = 0.001 s)
+    # BOTTOM (Δt ≈ 0.001 s, mais forcé à T/N)
     t2, u2, dts2 = euler_explicite(pb, dt_bottom)
     ue2 = u_exact(t2, pb)
     err2 = np.abs(u2 - ue2)
@@ -121,61 +167,77 @@ def plot_part1_two_rows(pb: Problem,
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     (ax00, ax01), (ax10, ax11) = axes
 
-    # Top-left: solutions Δt=1 s
+    # Top-left: solutions Δt
     ax00.plot(t1, ue1, label="Solution exacte $u_{ex}(t)$")
-    ax00.plot(t1, u1, marker="o", linestyle="--", label=r"Euler $\Delta t=1$ s")
+    ax00.plot(t1, u1, marker="o", linestyle="--", label=fr"Euler $\Delta t={dts1[0]:g}$ s")
     ax00.set_xlabel("Temps t (s)")
     ax00.set_ylabel("Amplitude u(t)")
-    ax00.set_title("Solutions — Δt = 1 s")
+    ax00.set_title("Solutions — Δt ≈ 1 s")
     ax00.grid(True, alpha=0.3)
     ax00.legend()
 
-    # Top-right: erreur Δt=1 s
+    # Top-right: erreur Δt
     ax01.plot(t1, err1, marker="o", linestyle="-", label=r"$|e(t_n)|$")
     ax01.set_xlabel("Temps t (s)")
     ax01.set_ylabel("Erreur ponctuelle")
-    ax01.set_title("Erreur — Δt = 1 s")
+    ax01.set_title("Erreur — Δt ≈ 1 s")
     ax01.grid(True, alpha=0.3)
     ax01.legend()
 
-    # Bottom-left: solutions Δt=0.001 s
+    # Bottom-left: solutions Δt
     ax10.plot(t2, ue2, label="Solution exacte $u_{ex}(t)$")
-    ax10.plot(t2, u2, linestyle="-", linewidth=1.0, label=r"Euler $\Delta t=0.001$ s")
+    ax10.plot(t2, u2, linestyle="-", linewidth=1.0, label=fr"Euler $\Delta t={dts2[0]:g}$ s")
     ax10.set_xlabel("Temps t (s)")
     ax10.set_ylabel("Amplitude u(t)")
-    ax10.set_title("Solutions — Δt = 0.001 s")
+    ax10.set_title("Solutions — Δt ≈ 0.001 s")
     ax10.grid(True, alpha=0.3)
     ax10.legend()
 
-    # Bottom-right: erreur Δt=0.001 s
+    # Bottom-right: erreur Δt
     ax11.plot(t2, err2, linestyle="-", linewidth=1.0, label=r"$|e(t_n)|$")
     ax11.set_xlabel("Temps t (s)")
     ax11.set_ylabel("Erreur ponctuelle")
-    ax11.set_title("Erreur — Δt = 0.001 s")
+    ax11.set_title("Erreur — Δt ≈ 0.001 s")
     ax11.grid(True, alpha=0.3)
     ax11.legend()
 
-    fig.suptitle("u'(t) = -λ u, u(0)=1 ; λ=1 — Comparaison visuelle Δt", y=0.98)
+    fig.suptitle("u'(t) = -λ u, u(0)=1 — Comparaison visuelle Δt", y=0.98)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(savepath, dpi=150)
 
 
+def _logspace_integers(n_min: int, n_max: int, n_steps: int) -> np.ndarray:
+    """Valeurs entières échelonnées logarithmiquement dans [n_min, n_max]."""
+    vals = np.geomspace(max(1, n_min), max(1, n_max), max(2, n_steps))
+    ints = np.unique(np.clip(np.round(vals).astype(int), n_min, n_max))
+    return ints
+
+
 def plot_part2(pb: Problem, n_steps: int = 20, dt_min: float = 1e-3, dt_max: float = 1.0,
-               savepath: str = "L2_error_vs_deta_time.png") -> None:
+               savepath: str = "Erreur_vs_delta_temps.png") -> None:
     """
-    Δt décroissants de 1 s à 0.001 s (échelle logarithmique), 20 valeurs.
+    Δt définis via Δt = T/N avec N entier échelonné log entre
+    N_min = ceil(T/dt_max) et N_max = floor(T/dt_min).
     Trace ||e||_L2 et ||e'||_L2 en fonction de Δt (log-log).
     """
-    dts_list = np.logspace(np.log10(dt_max), np.log10(dt_min), n_steps)
+    T = pb.T
+    N_min = int(np.ceil(T / dt_max))
+    N_max = int(np.floor(T / dt_min))
+    if N_max < max(2, N_min):
+        raise ValueError("Plage (dt_min, dt_max) trop étroite pour construire des N entiers.")
+    N_list = _logspace_integers(N_min, N_max, n_steps)
+
+    dts_arr = []
     errL2_u: List[float] = []
     errL2_du: List[float] = []
 
-    for dt in dts_list:
-        t, u_num, dts = euler_explicite(pb, dt)
+    for N in N_list:
+        t, u_num, dts = euler_explicite(pb, N=N)
+        dts_arr.append(float(dts[0]))
         errL2_u.append(l2_error_function(t, u_num, dts, pb))
         errL2_du.append(l2_error_derivative(t, u_num, dts, pb))
 
-    dts_arr = np.array(dts_list, dtype=float)
+    dts_arr = np.array(dts_arr, dtype=float)
     errL2_u = np.array(errL2_u, dtype=float)
     errL2_du = np.array(errL2_du, dtype=float)
 
@@ -200,11 +262,12 @@ def plot_part2(pb: Problem, n_steps: int = 20, dt_min: float = 1e-3, dt_max: flo
 
 def plot_error_vs_exact_derivative(pb: Problem,
                                    dts_to_show: List[float] = [1.0, 1e-3],
-                                   savepath: str = "Error_vs_exact_derivative.png") -> None:
+                                   savepath: str = "Erreur_vs_derivé.png") -> None:
     """
     Scatter: erreur ponctuelle |e(t_n)| en fonction de |u'_{ex}(t_n)|,
     pour plusieurs pas de temps (par défaut: Δt=1 s et Δt=0.001 s).
     Deux sous-graphes: (gauche) axes linéaires, (droite) log-log.
+    Δt est projeté sur T/N (N entier) pour éviter un dernier pas irrégulier.
     """
     fig, (ax_lin, ax_log) = plt.subplots(1, 2, figsize=(12, 4.5))
 
@@ -214,8 +277,8 @@ def plot_error_vs_exact_derivative(pb: Problem,
         err = np.abs(u_num - ue)
         deriv_norm = np.abs(-pb.lam * ue)  # = pb.lam * |ue|
 
-        ax_lin.scatter(deriv_norm, err, s=10, alpha=0.6, label=fr"$\Delta t={dt:g}$ s")
-        ax_log.loglog(deriv_norm + 1e-16, err + 1e-16, marker="o", linestyle="", markersize=3, alpha=0.6, label=fr"$\Delta t={dt:g}$ s")
+        ax_lin.scatter(deriv_norm, err, s=10, alpha=0.6, label=fr"$\Delta t={dts[0]:g}$ s")
+        ax_log.loglog(deriv_norm + 1e-16, err + 1e-16, marker="o", linestyle="", markersize=3, alpha=0.6, label=fr"$\Delta t={dts[0]:g}$ s")
 
     ax_lin.set_xlabel(r"$|u'_{ex}(t_n)|$")
     ax_lin.set_ylabel(r"$|e(t_n)|$")
@@ -236,17 +299,18 @@ def plot_error_vs_exact_derivative(pb: Problem,
 def main():
     pb = Problem(lam=1.0, u0=1.0, T=60.0)
 
-    # Partie 1 : deux rangées: Δt = 1 s (haut) et Δt = 0.001 s (bas)
+    # Partie 1 : deux rangées: Δt ≈ 1 s (haut) et Δt ≈ 0.001 s (bas),
+    # mais forcés à Δt = T/N exactement.
     plot_part1_two_rows(pb, dt_top=1.0, dt_bottom=1e-3,
                         savepath="Comparaison_visuelle.png")
 
-    # Partie 2 : erreur L2 en fonction de Δt (20 valeurs entre 1 et 1e-3)
+    # Partie 2 : erreur L2 en fonction de Δt (N entiers échelonnés log entre dt_max et dt_min)
     plot_part2(pb, n_steps=20, dt_min=1e-3, dt_max=1.0,
                savepath="Erreur_vs_delta_temps.png")
 
     # Partie 3 : Erreur ponctuelle vs norme de la dérivée exacte
     plot_error_vs_exact_derivative(pb, dts_to_show=[1.0, 1e-3],
-                                   savepath="Erreur_vs_derivé.png")
+                                   savepath="Erreur_vs_derive.png")
 
 
 if __name__ == "__main__":
