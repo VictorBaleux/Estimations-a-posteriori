@@ -1,0 +1,32 @@
+method,points,abs_error_or_MAE
+"Riemann (milieux, x)",25,6.666666540589006e-05
+"Riemann (milieux, x)",50,1.6666666248887907e-05
+"Riemann (milieux, x)",100,4.1666665522299695e-06
+"Riemann (milieux, x)",200,1.0416666373913586e-06
+"Riemann (milieux, x)",400,2.6041666068010727e-07
+"Riemann (milieux, x)",800,6.510416472593761e-08
+"Riemann (milieux, x)",1600,1.6276040959439797e-08
+"Riemann (milieux, x)",3200,4.069010017815344e-09
+Lebesgue uniforme (y),25,0.33985610391679977
+Lebesgue uniforme (y),50,0.17711651086726565
+Lebesgue uniforme (y),100,0.08640341782294048
+Lebesgue uniforme (y),200,0.04386869545769123
+Lebesgue uniforme (y),400,0.021355446205787665
+Lebesgue uniforme (y),800,0.010773389617345863
+Lebesgue uniforme (y),1600,0.005386133317775155
+Lebesgue uniforme (y),3200,0.0027067071687785216
+Lebesgue non uniforme (itér.),100,0.08640341782294048
+Lebesgue non uniforme (itér.),236,0.03533780334694736
+Lebesgue non uniforme (itér.),479,0.019582529307200502
+Lebesgue non uniforme (itér.),826,0.011258971254044958
+Lebesgue non uniforme (itér.),1579,0.005400866580411723
+Lebesgue non uniforme (itér.),2755,0.0034255487412764296
+Lebesgue non uniforme (itér.),5280,0.0015784074421478778
+"Monte-Carlo (MAE, 21 essais)",25,0.7682169299845081
+"Monte-Carlo (MAE, 21 essais)",50,0.4830817478972029
+"Monte-Carlo (MAE, 21 essais)",100,0.285822643417058
+"Monte-Carlo (MAE, 21 essais)",200,0.3102114629944751
+"Monte-Carlo (MAE, 21 essais)",400,0.18960131924201842
+"Monte-Carlo (MAE, 21 essais)",800,0.12245005219189713
+"Monte-Carlo (MAE, 21 essais)",1600,0.0878963869132962
+"Monte-Carlo (MAE, 21 essais)",3200,0.0471849628142152

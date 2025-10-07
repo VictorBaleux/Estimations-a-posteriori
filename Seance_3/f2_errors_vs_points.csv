@@ -1,0 +1,54 @@
+method,points,abs_error_or_MAE
+"Riemann (milieux, x)",25,0.24146845288017715
+"Riemann (milieux, x)",50,0.17091826052963333
+"Riemann (milieux, x)",100,0.12091871709798552
+"Riemann (milieux, x)",200,0.08552403741143433
+"Riemann (milieux, x)",400,0.060482249426104584
+"Riemann (milieux, x)",800,0.04277010167168038
+"Riemann (milieux, x)",1600,0.03024398066816314
+"Riemann (milieux, x)",3200,0.02138606024894152
+"Riemann (milieux, x)",6400,0.015122347158972094
+"Riemann (milieux, x)",12800,0.010693156271129212
+"Riemann (milieux, x)",25600,0.007561218177297491
+"Riemann (milieux, x)",51200,0.005346593902942232
+"Riemann (milieux, x)",102400,0.003780614663212223
+"Riemann (milieux, x)",204800,0.0026732989223319237
+Lebesgue uniforme (y),25,9.549010491931893
+Lebesgue uniforme (y),50,9.460982491174224
+Lebesgue uniforme (y),100,9.116223415265654
+Lebesgue uniforme (y),200,1.5022673803194302
+Lebesgue uniforme (y),400,1.2666630253503717
+Lebesgue uniforme (y),800,0.952739640295444
+Lebesgue uniforme (y),1600,0.5730671058510741
+Lebesgue uniforme (y),3200,0.25353193574784205
+Lebesgue uniforme (y),6400,0.121224556079643
+Lebesgue uniforme (y),12800,0.06050141717463875
+Lebesgue uniforme (y),25600,0.028269252706034642
+Lebesgue uniforme (y),51200,0.01157285720386847
+Lebesgue uniforme (y),102400,0.0043121653031397145
+Lebesgue uniforme (y),204800,0.00028719014901135154
+Lebesgue non uniforme (itér.),100,9.116223415265654
+Lebesgue non uniforme (itér.),299,0.08559715135762991
+Lebesgue non uniforme (itér.),832,0.0346305447859967
+Lebesgue non uniforme (itér.),2102,0.015929059941043988
+Lebesgue non uniforme (itér.),5277,0.007521544488324761
+Lebesgue non uniforme (itér.),8832,0.0030549136788708964
+Lebesgue non uniforme (itér.),18457,0.0014162679143212564
+Lebesgue non uniforme (itér.),31355,0.000361639589039342
+Lebesgue non uniforme (itér.),58841,0.0012613147188305085
+Lebesgue non uniforme (itér.),117552,0.0021217945463511967
+Lebesgue non uniforme (itér.),215691,0.0024334024132102172
+"Monte-Carlo (MAE, 21 essais)",25,0.49746334909684803
+"Monte-Carlo (MAE, 21 essais)",50,0.4107284528996703
+"Monte-Carlo (MAE, 21 essais)",100,0.31803836617892517
+"Monte-Carlo (MAE, 21 essais)",200,0.17244545137303108
+"Monte-Carlo (MAE, 21 essais)",400,0.11990633754311722
+"Monte-Carlo (MAE, 21 essais)",800,0.06866475238782807
+"Monte-Carlo (MAE, 21 essais)",1600,0.0870836806314879
+"Monte-Carlo (MAE, 21 essais)",3200,0.07681429995504993
+"Monte-Carlo (MAE, 21 essais)",6400,0.03996660903376636
+"Monte-Carlo (MAE, 21 essais)",12800,0.026767230631868446
+"Monte-Carlo (MAE, 21 essais)",25600,0.02719872547630369
+"Monte-Carlo (MAE, 21 essais)",51200,0.013539619706850364
+"Monte-Carlo (MAE, 21 essais)",102400,0.015157827584030397
+"Monte-Carlo (MAE, 21 essais)",204800,0.00718743941945861

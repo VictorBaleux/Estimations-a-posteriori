@@ -1,0 +1,4 @@
+Riemann slope ≈ -0.4999
+Lebesgue uniform slope ≈ -1.0464
+Lebesgue iterative slope ≈ -0.9688
+Monte-Carlo slope ≈ -0.4501
