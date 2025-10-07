@@ -1,0 +1,1 @@
+I_ref (Simpson adaptatif) = 6.9391205175694575
