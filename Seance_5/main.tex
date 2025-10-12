@@ -1,0 +1,161 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{listingsutf8}
+\usepackage{textcomp} % \texteuro
+\usepackage{hyperref}
+
+% Désactive les caractères actifs français dans les légendes/URLs
+\AtBeginDocument{\shorthandoff{:;!?}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+% Style listings robuste UTF-8
+\lstdefinestyle{pyutf8}{
+  inputencoding=utf8,
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  xleftmargin=2.2em,
+  framexleftmargin=1.5em,
+  showstringspaces=false,
+  language=Python,
+  tabsize=2,
+  keepspaces=true,
+  columns=fullflexible,
+  upquote=true,
+  literate=
+    % --- Français
+    {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {ë}{{\"e}}1
+    {à}{{\`a}}1 {ù}{{\`u}}1 {û}{{\^u}}1 {â}{{\^a}}1
+    {î}{{\^i}}1 {ï}{{\"i}}1 {ô}{{\^o}}1 {ç}{{\c c}}1
+    {É}{{\'E}}1 {œ}{{\oe}}1
+    % --- Euro
+    {€}{{\texteuro{}}}1
+    % --- Grec / opérateurs
+    {λ}{{$\lambda$}}1 {ν}{{$\nu$}}1 {μ}{{$\mu$}}1
+    {Δ}{{$\Delta$}}1 {∇}{{$\nabla$}}1
+    % --- Divers symboles
+    {‖}{{$\Vert$}}1 {×}{{$\times$}}1 {·}{{$\cdot$}}1
+    {−}{{$-$}}1 {–}{{--}}1 {—}{{---}}1
+    {≈}{{$\approx$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {→}{{$\to$}}1 {∞}{{$\infty$}}1
+    % --- Exposants usuels
+    {²}{{$^2$}}1 {³}{{$^3$}}1
+    % --- Indices Unicode (clé pour ‖e‖₂)
+    {₀}{{$_0$}}1 {₁}{{$_1$}}1 {₂}{{$_2$}}1 {₃}{{$_3$}}1 {₄}{{$_4$}}1
+    {₅}{{$_5$}}1 {₆}{{$_6$}}1 {₇}{{$_7$}}1 {₈}{{$_8$}}1 {₉}{{$_9$}}1
+    % --- Ellipse
+    {…}{{\ldots}}1
+}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+% ---------- PAGE DE GARDE ----------
+
+% --- injected VSCode-like listings style ---
+
+% === VS Code-like syntax highlighting with listings ===
+\usepackage{xcolor}
+\usepackage{upquote}
+\usepackage[section]{placeins}
+
+% VS Code Light+ inspired palette
+\definecolor{vscBlue}{HTML}{0000FF}     % keywords
+\definecolor{vscGreen}{HTML}{6A9955}    % comments
+\definecolor{vscRed}{HTML}{A31515}      % strings
+\definecolor{vscTeal}{HTML}{267F99}     % types / special keywords
+\definecolor{vscPurple}{HTML}{795E26}   % function/class names (approx)
+\definecolor{vscNumber}{HTML}{098658}   % numbers
+\definecolor{vscBG}{HTML}{FFFFFF}       % background (white)
+\definecolor{vscGutter}{gray}{0.4}
+
+% Base style (no literate mapping here; we add it in vscodeutf8)
+\lstdefinestyle{vscode}{
+  backgroundcolor=\color{vscBG},
+  basicstyle=\ttfamily\footnotesize,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{black},
+  numbers=left,
+  numberstyle=\tiny\color{vscGutter},
+  xleftmargin=2.2em,
+  framexleftmargin=1.5em,
+  showstringspaces=false,
+  breaklines=true,
+  tabsize=2,
+  upquote=true,
+  keepspaces=true,
+  columns=fullflexible,
+  % token styles
+  keywordstyle=\color{vscBlue}\bfseries,
+  commentstyle=\color{vscGreen}\itshape,
+  stringstyle=\color{vscRed},
+  identifierstyle=\color{black},
+  % Extra keyword groups to mimic VSCode coloring
+  keywordstyle=[2]\color{vscTeal}\bfseries,   % types / builtins
+  keywordstyle=[3]\color{vscPurple}\bfseries, % defs/classes (approx via emph)
+  morekeywords=[2]{int,float,bool,list,tuple,dict,set,ndarray,Optional,Callable},
+  emph={def,class,return,yield,lambda,with,as,from,import,for,while,if,elif,else,try,except,finally,raise,assert,pass,break,continue},
+  emphstyle=\color{vscBlue}\bfseries
+}
+
+% UTF-8 mapping for listings so accents / greek / operators render in code
+\lstdefinestyle{vscodeutf8}{
+  style=vscode,
+  inputencoding=utf8,
+  extendedchars=true,
+  literate=%
+    {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {ë}{{\"e}}1 {à}{{\`a}}1 {ù}{{\`u}}1 {û}{{\^u}}1 {â}{{\^a}}1 {î}{{\^i}}1 {ï}{{\"i}}1 {ô}{{\^o}}1 {ç}{{\c c}}1 {É}{{\'E}}1 % French
+    {œ}{{\oe}}1 {Œ}{{\OE}}1
+    {€}{{\euro{}}}1 % Euro
+    {λ}{{$\lambda$}}1 {ν}{{$\nu$}}1 {μ}{{$\mu$}}1 {Δ}{{$\Delta$}}1 {∇}{{$\nabla$}}1 % Greek / operators
+    {‖}{{$\Vert$}}1 {×}{{$\times$}}1 {·}{{$\cdot$}}1 {−}{{$-$}}1 {–}{{-}}1 {—}{{---}}1 % dashes, times, middle dot, real minus
+    {≈}{{$\approx$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {→}{{$\to$}}1 {∞}{{$\infty$}}1 % relations
+    {²}{{$^2$}}1 {³}{{$^3$}}1
+}
+
+% Apply style globally for Python
+\lstset{
+  language=Python,
+  style=vscodeutf8
+}
+
+\begin{document}
+\begin{titlepage}
+  \centering
+  \vspace*{0.5cm}
+  \includegraphics[width=0.28\textwidth]{logo_fds.png}\par
+  \vspace{1.2cm}
+  {\Huge \textbf{Estimation a posteriori}\par}
+  \vspace{0.6cm}
+  {\Large \textit{rapport scéance 5}\par}
+  \vfill
+  \begin{minipage}{0.48\textwidth}
+    \raggedright Victor Baleux
+  \end{minipage}
+  \begin{minipage}{0.48\textwidth}
+    \raggedleft \today
+  \end{minipage}
+\end{titlepage}
+
+\tableofcontents
+
+\end{document}

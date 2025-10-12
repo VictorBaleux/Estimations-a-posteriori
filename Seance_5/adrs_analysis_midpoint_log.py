@@ -149,6 +149,7 @@ def plot_convergence(order=4):
     plt.title(f"Erreur vs h à T/2 et T (RK{order})")
     plt.legend()
     plt.tight_layout()
+    plt.savefig("convergence_RK4_vs_h.png", dpi=150, bbox_inches="tight")
     plt.show()
 
 # ------------------------------------------------------
@@ -194,7 +195,9 @@ def plot_midpoint_evolution(NX=201, orders=(1,2,3,4), eps=1e-16):
     plt.title("Erreur au milieu du domaine vs temps (RK1..RK4)")
     plt.legend()
     plt.tight_layout()
+    plt.savefig("Erreur_RK1_4.png", dpi=150, bbox_inches="tight")
     plt.show()
+    
 
 if __name__ == "__main__":
     plot_convergence(order=4)
